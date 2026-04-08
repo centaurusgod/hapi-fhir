@@ -348,6 +348,15 @@ public class Search implements ICachedSearchDetails, Serializable {
 		return myResourceId != null ? JpaPid.fromId(myResourceId, myPartitionId) : null;
 	}
 
+	@Nullable
+	public Integer getPartitionId() {
+		return myPartitionId;
+	}
+
+	public void setPartitionId(@Nullable Integer thePartitionId) {
+		myPartitionId = thePartitionId;
+	}
+
 	public void setResourceId(@Nullable JpaPid theResourceId) {
 		myResourceId = theResourceId != null ? theResourceId.getId() : null;
 		myPartitionId = theResourceId != null ? theResourceId.getPartitionId() : null;
