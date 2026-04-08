@@ -50,6 +50,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -112,7 +113,25 @@ public class DatabaseSearchCacheSvcImpl implements ISearchCacheSvc {
 		Validate.notBlank(theUuid);
 		return myTransactionService
 				.withSystemRequestOnPartition(theRequestPartitionId)
-				.execute(() -> mySearchDao.findByUuidAndFetchIncludes(theUuid));
+				.execute(() -> mySearchDao.findByUuidAndFetchIncludes(theUuid))
+				.filter(t -> isAccessibleFromRequestPartition(t, theRequestPartitionId));
+	}
+
+	private boolean isAccessibleFromRequestPartition(Search theSearch, RequestPartitionId theRequestPartitionId) {
+		if (theRequestPartitionId == null || theRequestPartitionId.isAllPartitions()) {
+			return true;
+		}
+		if (!theRequestPartitionId.hasPartitionIds()) {
+			return true;
+		}
+
+		Integer searchPartitionId = theSearch.getPartitionId();
+		if (theRequestPartitionId.getPartitionIds().size() == 1) {
+			return Objects.equals(searchPartitionId, theRequestPartitionId.getFirstPartitionIdOrNull());
+		}
+
+		return searchPartitionId == null
+				|| theRequestPartitionId.getPartitionIds().contains(searchPartitionId);
 	}
 
 	void setSearchDaoForUnitTest(ISearchDao theSearchDao) {

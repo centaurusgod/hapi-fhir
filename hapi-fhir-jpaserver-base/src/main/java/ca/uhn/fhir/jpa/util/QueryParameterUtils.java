@@ -26,6 +26,8 @@ import ca.uhn.fhir.jpa.entity.SearchInclude;
 import ca.uhn.fhir.jpa.entity.SearchTypeEnum;
 import ca.uhn.fhir.jpa.model.entity.ResourceTable;
 import ca.uhn.fhir.jpa.model.search.SearchStatusEnum;
+import ca.uhn.fhir.jpa.search.builder.sql.ColumnTupleObject;
+import ca.uhn.fhir.jpa.search.builder.sql.JpaPidValueTuples;
 import ca.uhn.fhir.jpa.searchparam.SearchParameterMap;
 import ca.uhn.fhir.model.api.Include;
 import ca.uhn.fhir.model.primitive.InstantDt;
@@ -116,6 +118,12 @@ public class QueryParameterUtils {
 	@Nullable
 	public static Condition toAndPredicate(Condition... theAndPredicates) {
 		return toAndPredicate(Arrays.asList(theAndPredicates));
+	}
+
+	@Nonnull
+	public static Condition toInPredicate(
+			ColumnTupleObject theColumns, JpaPidValueTuples theValues, boolean theInverse) {
+		return new InCondition(theColumns, theValues).setNegate(theInverse);
 	}
 
 	@Nonnull
@@ -222,6 +230,12 @@ public class QueryParameterUtils {
 		theSearch.setLastUpdated(theParams.getLastUpdated());
 		theSearch.setResourceType(theResourceType);
 		theSearch.setStatus(SearchStatusEnum.LOADING);
+		if (theRequestPartitionId != null
+				&& !theRequestPartitionId.isAllPartitions()
+				&& theRequestPartitionId.hasPartitionIds()
+				&& theRequestPartitionId.getPartitionIds().size() == 1) {
+			theSearch.setPartitionId(theRequestPartitionId.getFirstPartitionIdOrNull());
+		}
 		theSearch.setSearchQueryString(theQueryString, theRequestPartitionId);
 
 		if (theParams.hasIncludes()) {
